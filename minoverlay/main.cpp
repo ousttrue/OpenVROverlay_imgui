@@ -12,13 +12,11 @@ void SAFE_RELEASE(LPD3D &p)
 }
 
 /////////////////////////////////////////
-LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 bool Initialize(HWND hWnd);
 HRESULT CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
 bool InitOpenVR();
 void RenderOverlay(HWND hWnd);
-
 
 ID3D11Device *g_pd3dDevice = NULL;
 ID3D11DeviceContext *g_pd3dDeviceContext = NULL;
@@ -38,92 +36,6 @@ std::string GetExePath()
 
     std::string::size_type pos = std::string(buffer).find_last_of("\\/");
     return std::string(buffer).substr(0, pos);
-}
-
-/////////////////////////////////////////
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
-    // ウインドウ作成
-    WNDCLASSEX wcex;
-    wcex.cbSize = sizeof(WNDCLASSEX);
-    wcex.style = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc = WndProc;
-    wcex.cbClsExtra = 0;
-    wcex.cbWndExtra = 0;
-    wcex.hInstance = hInstance;
-    wcex.hIcon = NULL;
-    wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-    wcex.lpszMenuName = NULL;
-    wcex.lpszClassName = L"Dashboard";
-    wcex.hIconSm = NULL;
-
-    if (!RegisterClassEx(&wcex))
-    {
-        return 0;
-    }
-    RECT rc = {0, 0, 512, 512};
-    AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-
-    HWND hWnd = CreateWindow(L"Dashboard", L"Dashboard", WS_OVERLAPPEDWINDOW,
-                             CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top,
-                             NULL, NULL, hInstance, NULL);
-    if (!hWnd)
-    {
-        return 0;
-    }
-    ///ShowWindow( hWnd, nCmdShow );
-    ///UpdateWindow( hWnd );
-
-    // イベントループ
-    MSG msg = {};
-    while (msg.message != WM_QUIT)
-    {
-        if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-            continue;
-        }
-        RenderOverlay(hWnd);
-
-        Sleep(10);
-    }
-
-    return 0;
-}
-
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    PAINTSTRUCT ps;
-    HDC hdc;
-
-    switch (message)
-    {
-    case WM_CREATE:
-        if (!Initialize(hWnd))
-        {
-            CleanupDeviceD3D();
-
-            PostQuitMessage(0);
-        }
-        break;
-    case WM_SYSCOMMAND:
-        break;
-    case WM_PAINT:
-        hdc = BeginPaint(hWnd, &ps);
-        EndPaint(hWnd, &ps);
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-
-    return 0;
 }
 
 // 初期化入り口
@@ -231,7 +143,7 @@ bool InitOpenVR()
 
     // ボタンオーバーレイ作成
     std::string path = GetExePath();
-    std::string thumbIconPath = path + "\\thumbicon.png"; /// ボタンのアイコン
+    std::string thumbIconPath = path + "\\..\\..\\x64\\Debug\\thumbicon.png"; /// ボタンのアイコン
     overlayError = vr::VROverlay()->SetOverlayFromFile(g_ulOverlayThumbnailHandle, thumbIconPath.c_str());
     if (overlayError != vr::VROverlayError_None)
     {
@@ -271,4 +183,92 @@ void RenderOverlay(HWND hWnd)
     vr::VROverlay()->SetOverlayTexture(g_ulOverlayHandle, &texture);
 
     backBuffer->Release();
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// entroy point
+//////////////////////////////////////////////////////////////////////////////
+auto CLASS_NAME = L"MinOverlayClass";
+auto WINDOW_NAME = L"MinOverlay";
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message)
+    {
+    case WM_CREATE:
+        break;
+    case WM_SYSCOMMAND:
+        break;
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        auto hdc = BeginPaint(hWnd, &ps);
+        EndPaint(hWnd, &ps);
+        break;
+    }
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+
+    return 0;
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+    WNDCLASSEX wcex;
+    wcex.cbSize = sizeof(WNDCLASSEX);
+    wcex.style = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc = WndProc;
+    wcex.cbClsExtra = 0;
+    wcex.cbWndExtra = 0;
+    wcex.hInstance = hInstance;
+    wcex.hIcon = NULL;
+    wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.lpszMenuName = NULL;
+    wcex.lpszClassName = CLASS_NAME;
+    wcex.hIconSm = NULL;
+    if (!RegisterClassEx(&wcex))
+    {
+        return 0;
+    }
+
+    RECT rc = {0, 0, 512, 512};
+    AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+
+    HWND hWnd = CreateWindowW(CLASS_NAME, WINDOW_NAME, WS_OVERLAPPEDWINDOW,
+                              CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top,
+                              NULL, NULL, hInstance, NULL);
+    if (!hWnd)
+    {
+        return 0;
+    }
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
+    if (!Initialize(hWnd))
+    {
+        CleanupDeviceD3D();
+        return 1;
+    }
+
+    // イベントループ
+    MSG msg = {};
+    while (msg.message != WM_QUIT)
+    {
+        if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+            continue;
+        }
+        RenderOverlay(hWnd);
+
+        Sleep(10);
+    }
+
+    return 0;
 }

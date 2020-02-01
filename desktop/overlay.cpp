@@ -56,6 +56,31 @@ public:
         vr::Texture_t texture = {handle, vr::TextureType_DXGISharedHandle, vr::ColorSpace_Auto};
         vr::VROverlay()->SetOverlayTexture(g_ulOverlayHandle, &texture);
     }
+
+    bool Loop(bool *isActive)
+    {
+        *isActive = false;
+        if (!vr::VROverlay())
+            return false;
+
+        if (vr::VROverlay()->IsOverlayVisible(g_ulOverlayHandle))
+        {
+            *isActive = true;
+
+            vr::VREvent_t Event;
+            while (vr::VROverlay()->PollNextOverlayEvent(g_ulOverlayHandle, &Event, sizeof(Event)))
+            {
+                switch (Event.eventType)
+                {
+                case vr::VREvent_MouseMove:
+                    break;
+                case vr::VREvent_MouseButtonDown:
+                    break;
+                }
+            }
+        }
+        return true;
+    }
 };
 
 Overlay::Overlay()
@@ -68,9 +93,14 @@ Overlay::~Overlay()
     delete m_impl;
 }
 
-bool Overlay::Initialize(const char*key, const char* name)
+bool Overlay::Initialize(const char *key, const char *name)
 {
     return m_impl->InitOpenVR(key, name);
+}
+
+bool Overlay::Loop(bool *isActive)
+{
+    return m_impl->Loop(isActive);
 }
 
 void Overlay::SetSharedHanle(void *handle)

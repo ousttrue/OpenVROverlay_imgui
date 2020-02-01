@@ -69,8 +69,10 @@ void loop(const Microsoft::WRL::ComPtr<ID3D11Device> &device,
     Microsoft::WRL::ComPtr<ID3D11Texture2D> shared;
 
     // get dup
-    for (int i = 0; true; ++i)
+    bool isActive;
+    while (overlay.Loop(&isActive))
     {
+        if (isActive)
         {
             dupl->ReleaseFrame();
 
@@ -102,7 +104,7 @@ void loop(const Microsoft::WRL::ComPtr<ID3D11Device> &device,
 
                     // create shared handle
                     Microsoft::WRL::ComPtr<IDXGIResource> sharedResource;
-                    if(FAILED(shared.As(&sharedResource)))
+                    if (FAILED(shared.As(&sharedResource)))
                     {
                         return;
                     }
@@ -134,6 +136,10 @@ void loop(const Microsoft::WRL::ComPtr<ID3D11Device> &device,
             default:
                 return;
             }
+        }
+        else
+        {
+            Sleep(100);
         }
     }
 }

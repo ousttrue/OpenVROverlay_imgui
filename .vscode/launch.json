@@ -5,6 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "desktop",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/desktop/desktop.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "${workspaceFolder}/OpenVROverlay_imgui;${env:PATH}"
+                }
+            ],
+            "externalConsole": false
+        },
+        {
             "name": "minoverlay",
             "type": "cppvsdbg",
             "request": "launch",

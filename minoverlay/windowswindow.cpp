@@ -24,8 +24,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 class WindowsWindowImpl
 {
 public:
-    HWND Initialize(HINSTANCE hInstance, const wchar_t *className, const wchar_t *windowName)
+    HWND Initialize(const wchar_t *className, const wchar_t *windowName)
     {
+        auto hInstance = GetModuleHandle(NULL);
+
         WNDCLASSEX wcex;
         wcex.cbSize = sizeof(WNDCLASSEX);
         wcex.style = CS_HREDRAW | CS_VREDRAW;
@@ -86,12 +88,26 @@ WindowsWindow::~WindowsWindow()
     delete m_impl;
 }
 
-void *WindowsWindow::Initialize(void *hInstance, const wchar_t *className, const wchar_t *windowName)
+void *WindowsWindow::Initialize(const wchar_t *className, const wchar_t *windowName)
 {
-    return m_impl->Initialize((HINSTANCE)hInstance, className, windowName);
+    return m_impl->Initialize(className, windowName);
 }
 
 bool WindowsWindow::Loop()
 {
     return m_impl->Loop();
+}
+
+void WindowsWindow::Wait()
+{
+    Sleep(10);
+}
+
+std::string GetExePath()
+{
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(NULL, buffer, MAX_PATH);
+
+    std::string::size_type pos = std::string(buffer).find_last_of("\\/");
+    return std::string(buffer).substr(0, pos);
 }

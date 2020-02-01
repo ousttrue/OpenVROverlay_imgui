@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 class WindowsWindow
 {
@@ -7,6 +8,9 @@ class WindowsWindow
 public:
     WindowsWindow();
     ~WindowsWindow();
-    void* Initialize(void *hInstance, const wchar_t *className, const wchar_t *windowName);
+    void* Initialize(const wchar_t *className, const wchar_t *windowName);
     bool Loop();
+    void Wait();
 };
+
+std::string GetExePath();

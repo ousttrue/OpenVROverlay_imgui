@@ -1,8 +1,10 @@
 set(TARGET_NAME minoverlay)
 set(SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/../OpenVROverlay_imgui)
-add_executable(${TARGET_NAME} WIN32
+add_executable(${TARGET_NAME}
     main.cpp
     windowswindow.cpp
+    d3dmanager.cpp
+    overlay.cpp
     )
 target_include_directories(${TARGET_NAME} PRIVATE
     ${SRC_DIR}/openvr/headers

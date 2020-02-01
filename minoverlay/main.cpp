@@ -1,4 +1,4 @@
-﻿#include <windows.h>
+﻿#include "windowswindow.h"
 #include <d3d11.h>
 #include <openvr.h>
 
@@ -191,82 +191,24 @@ void RenderOverlay(HWND hWnd)
 auto CLASS_NAME = L"MinOverlayClass";
 auto WINDOW_NAME = L"MinOverlay";
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-    case WM_CREATE:
-        break;
-    case WM_SYSCOMMAND:
-        break;
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        auto hdc = BeginPaint(hWnd, &ps);
-        EndPaint(hWnd, &ps);
-        break;
-    }
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-
-    return 0;
-}
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    WNDCLASSEX wcex;
-    wcex.cbSize = sizeof(WNDCLASSEX);
-    wcex.style = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc = WndProc;
-    wcex.cbClsExtra = 0;
-    wcex.cbWndExtra = 0;
-    wcex.hInstance = hInstance;
-    wcex.hIcon = NULL;
-    wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-    wcex.lpszMenuName = NULL;
-    wcex.lpszClassName = CLASS_NAME;
-    wcex.hIconSm = NULL;
-    if (!RegisterClassEx(&wcex))
-    {
-        return 0;
-    }
-
-    RECT rc = {0, 0, 512, 512};
-    AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-
-    HWND hWnd = CreateWindowW(CLASS_NAME, WINDOW_NAME, WS_OVERLAPPEDWINDOW,
-                              CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top,
-                              NULL, NULL, hInstance, NULL);
+    WindowsWindow window;
+    auto hWnd = (HWND)window.Initialize(hInstance, CLASS_NAME, WINDOW_NAME);
     if (!hWnd)
     {
-        return 0;
-    }
-    ShowWindow(hWnd, nCmdShow);
-    UpdateWindow(hWnd);
-    if (!Initialize(hWnd))
-    {
-        CleanupDeviceD3D();
         return 1;
     }
 
-    // イベントループ
-    MSG msg = {};
-    while (msg.message != WM_QUIT)
+    if (!Initialize(hWnd))
     {
-        if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-            continue;
-        }
-        RenderOverlay(hWnd);
+        CleanupDeviceD3D();
+        return 2;
+    }
 
+    while (window.Loop())
+    {
+        RenderOverlay(hWnd);
         Sleep(10);
     }
 

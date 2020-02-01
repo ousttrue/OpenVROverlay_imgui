@@ -2,10 +2,6 @@
 #include <d3d11.h>
 #include <openvr.h>
 
-#include "imgui.h"
-#include "./examples/imgui_impl_win32.h"
-#include "./examples/imgui_impl_dx11.h"
-
 /////////////////////////////////////////
 template <typename LPD3D>
 void SAFE_RELEASE(LPD3D &p)
@@ -20,12 +16,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 bool Initialize(HWND hWnd);
 HRESULT CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
-void InitImGui(HWND hWnd);
 bool InitOpenVR();
 void RenderOverlay(HWND hWnd);
-void ImGui_ImplWin32_NewFrame_VR(HWND hWnd, vr::VREvent_t *pEvent);
 
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 ID3D11Device *g_pd3dDevice = NULL;
 ID3D11DeviceContext *g_pd3dDeviceContext = NULL;
@@ -106,8 +99,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     PAINTSTRUCT ps;
     HDC hdc;
 
-    ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam);
-
     switch (message)
     {
     case WM_CREATE:
@@ -143,9 +134,6 @@ bool Initialize(HWND hWnd)
     {
         return false;
     }
-
-    // imguiの初期化
-    InitImGui(hWnd);
 
     // OpenVRの初期化
     if (!InitOpenVR())
@@ -206,23 +194,6 @@ void CleanupDeviceD3D()
     SAFE_RELEASE(g_pSwapChain);
     SAFE_RELEASE(g_pd3dDeviceContext);
     SAFE_RELEASE(g_pd3dDevice);
-}
-
-// imguiの初期化
-void InitImGui(HWND hWnd)
-{
-    ::QueryPerformanceFrequency((LARGE_INTEGER *)&g_TicksPerSecond);
-    ::QueryPerformanceCounter((LARGE_INTEGER *)&g_Time);
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-
-    ImGui_ImplWin32_Init(hWnd);                             // Windows
-    ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext); // DirectX使うよ
-
-    ImGui::StyleColorsClassic(); // 好きなスタイルで
-
-    ImGui_ImplDX11_CreateDeviceObjects(); // DirectX
 }
 
 // OpenVRの初期化
@@ -290,35 +261,6 @@ void RenderOverlay(HWND hWnd)
         }
     }
 
-    // imgui毎フレーム処理
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame_VR(hWnd, &Event); // マウス処理など
-    ImGui::NewFrame();
-
-    // ウィジェット定義(!)
-    {
-        bool p_open = true;
-        bool foo = true;
-        ImGui::SetNextWindowPos(ImVec2(10, 200));
-        ImGui::Begin("Simple Overlay", &p_open, ImVec2(0, 0), 1.0f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
-        ImGui::Text("Simple Overlay\nhogehoge");
-        ImGui::Separator();
-        ImGui::Text("Mouse   Position: (%.1f,%.1f)", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
-        ImGui::Text("Pointer Position: (%.1f,%.1f)", Event.data.mouse.x, Event.data.mouse.y);
-        ImGui::Separator();
-        ImGui::Checkbox("Enable foo", &foo);
-        ImGui::End();
-    }
-
-    // imgui描画
-    ImVec4 clear_color = ImVec4(0.2f, 0.2f, 0.8f, 1.00f);
-
-    g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL); /// デバイスコンテキストにバックバッファとデプスバッファを関連付け
-    g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, (float *)&clear_color);
-
-    ImGui::Render();                                     /// 描画コールバック
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); /// 描画コールバックを使わない場合
-
     g_pSwapChain->Present(1, 0);
 
     // オーバーレイに複写
@@ -329,35 +271,4 @@ void RenderOverlay(HWND hWnd)
     vr::VROverlay()->SetOverlayTexture(g_ulOverlayHandle, &texture);
 
     backBuffer->Release();
-}
-
-void ImGui_ImplWin32_NewFrame_VR(HWND hWnd, vr::VREvent_t *pEvent)
-{
-    ImGuiIO &io = ImGui::GetIO();
-
-    RECT rect;
-    ::GetClientRect(hWnd, &rect);
-    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
-
-    // Setup time step
-    INT64 current_time;
-    ::QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
-    io.DeltaTime = (float)(current_time - g_Time) / g_TicksPerSecond;
-    g_Time = current_time;
-
-    // コントローラーの座標を変換
-    float pos_x = pEvent->data.mouse.x * io.DisplaySize.x;
-    float pos_y = (1.0f - pEvent->data.mouse.y) * io.DisplaySize.y;
-    io.MousePos = ImVec2(pos_x, pos_y);
-
-    // クリック処理
-    switch (pEvent->eventType)
-    {
-    case vr::VREvent_MouseButtonDown:
-        io.MouseDown[0] = true;
-        break;
-    case vr::VREvent_MouseButtonUp:
-        io.MouseDown[0] = false;
-        break;
-    }
 }

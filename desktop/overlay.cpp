@@ -38,9 +38,7 @@ public:
 
         vr::VROverlay()->SetOverlayAlpha(g_ulOverlayHandle, 1.0f);
         vr::VROverlay()->SetOverlayColor(g_ulOverlayHandle, 1.0f, 1.0f, 1.0f);
-
-        vr::VROverlay()->SetOverlayWidthInMeters(g_ulOverlayHandle, 2.0f);
-        vr::VROverlay()->SetOverlayInputMethod(g_ulOverlayHandle, vr::VROverlayInputMethod_Mouse);
+        vr::VROverlay()->SetOverlayWidthInMeters(g_ulOverlayHandle, 4.0f);
 
         std::string path = GetExePath();
         std::string thumbIconPath = path + "\\..\\..\\x64\\Debug\\thumbicon.png";
@@ -53,24 +51,9 @@ public:
         return true;
     }
 
-    void RenderOverlay(void *backBuffer)
+    void SetSharedHandle(void *handle)
     {
-        if (!vr::VROverlay() || !vr::VROverlay()->IsOverlayVisible(g_ulOverlayHandle))
-            return;
-
-        vr::VREvent_t Event;
-        while (vr::VROverlay()->PollNextOverlayEvent(g_ulOverlayHandle, &Event, sizeof(Event)))
-        {
-            switch (Event.eventType)
-            {
-            case vr::VREvent_MouseMove:
-                break;
-            case vr::VREvent_MouseButtonDown:
-                break;
-            }
-        }
-
-        vr::Texture_t texture = {backBuffer, vr::TextureType_DirectX, vr::ColorSpace_Auto};
+        vr::Texture_t texture = {handle, vr::TextureType_DXGISharedHandle, vr::ColorSpace_Auto};
         vr::VROverlay()->SetOverlayTexture(g_ulOverlayHandle, &texture);
     }
 };
@@ -90,7 +73,7 @@ bool Overlay::Initialize(const char*key, const char* name)
     return m_impl->InitOpenVR(key, name);
 }
 
-void Overlay::Render(void *d3dtexture)
+void Overlay::SetSharedHanle(void *handle)
 {
-    m_impl->RenderOverlay(d3dtexture);
+    m_impl->SetSharedHandle(handle);
 }

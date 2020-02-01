@@ -64,6 +64,10 @@ void loop(const Microsoft::WRL::ComPtr<ID3D11Device> &device,
         return;
     }
 
+    Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
+    device->GetImmediateContext(&context);
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> shared;
+
     // get dup
     for (int i = 0; true; ++i)
     {
@@ -77,8 +81,43 @@ void loop(const Microsoft::WRL::ComPtr<ID3D11Device> &device,
             {
             case S_OK:
             {
-                // update overlay
-                overlay.Render(resource.Get());
+                Microsoft::WRL::ComPtr<ID3D11Texture2D> duplTexture;
+                if (FAILED(resource.As(&duplTexture)))
+                {
+                    return;
+                }
+                if (!shared)
+                {
+                    // only first time
+                    D3D11_TEXTURE2D_DESC desc;
+                    duplTexture->GetDesc(&desc);
+                    desc.Usage = D3D11_USAGE_DEFAULT;
+                    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+                    desc.CPUAccessFlags = 0;
+                    desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+                    if (FAILED(device->CreateTexture2D(&desc, nullptr, &shared)))
+                    {
+                        return;
+                    }
+
+                    // create shared handle
+                    Microsoft::WRL::ComPtr<IDXGIResource> sharedResource;
+                    if(FAILED(shared.As(&sharedResource)))
+                    {
+                        return;
+                    }
+
+                    HANDLE handle;
+                    if (FAILED(sharedResource->GetSharedHandle(&handle)))
+                    {
+                        return;
+                    }
+
+                    // set overlay
+                    overlay.SetSharedHanle(handle);
+                }
+                // copy duplTexture to shared
+                context->CopyResource(shared.Get(), duplTexture.Get());
             }
             break;
 

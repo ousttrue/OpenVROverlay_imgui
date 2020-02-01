@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     }
 
     Overlay overlay;
-    if (!overlay.Initialize(hWnd))
+    if (!overlay.Initialize("minoverlay", "minimum overlay"))
     {
         return 3;
     }
